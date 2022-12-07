@@ -1,6 +1,7 @@
 import os
-import discord
 import random
+import discord
+from discord.ext.commands import Context
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,7 +17,7 @@ async def on_ready():
     name="règle",
     description="Choisi une règle au hasard parmi toutes celles existantes",
 )
-async def regle(ctx):
+async def regle(ctx: Context):
     def format_rule(rule: str) -> str:
         words = rule.split("-")
         formatted_rule = ""
@@ -29,9 +30,12 @@ async def regle(ctx):
 
         return formatted_rule.capitalize()
 
-    channels = ctx.guild.channels
-    rules = [channel for channel in channels if channel.name.startswith("règle-")]
-    chosen_rule = random.choice(rules).name
+    rules = set(
+        channel.name
+        for channel in ctx.guild.channels
+        if channel.name.startswith("règle-")
+    )
+    chosen_rule = random.choice(rules)
 
     embed = discord.Embed()
     embed.add_field(name="La règle choisie est... 🃏", value=format_rule(chosen_rule))
