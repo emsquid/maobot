@@ -27,14 +27,16 @@ async def regle(ctx):
             else:
                 formatted_rule += word + " "
 
-        return formatted_rule
+        return formatted_rule.capitalize()
 
-    rules = [
-        channel for channel in ctx.guild.channels if channel.name.startswith("règle")
-    ]
+    channels = ctx.guild.channels
+    rules = [channel for channel in channels if channel.name.startswith("règle-")]
     chosen_rule = random.choice(rules).name
 
-    await ctx.respond(f"La règle choisie est: **{format_rule(chosen_rule)}**")
+    embed = discord.Embed()
+    embed.add_field(name="La règle choisie est... 🃏", value=format_rule(chosen_rule))
+
+    await ctx.respond(embed=embed)
 
 
 bot.run(os.getenv("TOKEN"))
