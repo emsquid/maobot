@@ -35,7 +35,7 @@ async def regle(ctx: Context):
         for channel in ctx.guild.channels
         if channel.name.startswith("règle-")
     )
-    chosen_rule = random.choice(rules)
+    chosen_rule = random.choice(tuple(rules))
 
     embed = discord.Embed()
     embed.add_field(name="La règle choisie est... 🃏", value=format_rule(chosen_rule))
