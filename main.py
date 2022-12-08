@@ -55,7 +55,7 @@ async def regle(ctx: Context):
         reroll_button = discord.ui.Button(label="Reroll")
         reroll_button.callback = reroll
 
-        return discord.ui.View(reroll_button)
+        return discord.ui.View(reroll_button, disable_on_timeout=True)
 
     async def reroll(interaction: discord.Interaction):
         if interaction.user == ctx.author:
