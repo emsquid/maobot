@@ -3,6 +3,7 @@
 configfolder=$HOME/.config/maobot
 logfile=$configfolder/maobot.log
 pidfile=$configfolder/maobot.pid
+pythonfile="$(dirname "${BASH_SOURCE[0]}")"/main.py
 
 function store_pid() {
     echo "$1" >"$pidfile"
@@ -19,7 +20,7 @@ function kill_previous_process() {
 function start() {
     mkdir -p "$configfolder"
     kill_previous_process
-    nohup python3 main.py &>"$logfile" &
+    nohup python3 "$pythonfile" >>"$logfile" 2>/dev/null &
     store_pid "$!"
 }
 
