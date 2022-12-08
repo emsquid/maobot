@@ -19,7 +19,7 @@ function kill_previous_process() {
 function start() {
     mkdir -p "$configfolder"
     kill_previous_process
-    nohup python3 main.py >>"$logfile" &
+    nohup python3 main.py &>"$logfile" &
     store_pid "$!"
 }
 
