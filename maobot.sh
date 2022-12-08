@@ -23,4 +23,12 @@ function start() {
     store_pid "$!"
 }
 
-start
+command=$1
+
+if [[ $command == "start" ]]; then
+    echo "Bot started"
+    start
+elif [[ $command == "stop" ]]; then
+    echo "Bot stopped"
+    kill_previous_process
+fi
