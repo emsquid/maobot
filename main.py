@@ -35,19 +35,23 @@ async def on_ready():
 async def regle(ctx: Context):
     rules = list(
         set(
-            channel.name
+            channel.name.strip()
             for channel in ctx.guild.channels
             if channel.name.startswith("règle-") and channel.name != "règle-de"
         )
     )
 
-    def generate_embed() -> discord.Embed:
-        chosen_rule = rules.pop(random.randrange(len(rules)))
+    def generate_embed(allowed: bool = True) -> discord.Embed:
+        if allowed:
+            chosen_rule = rules.pop(random.randrange(len(rules)))
 
-        embed = discord.Embed()
-        embed.add_field(
-            name="La règle choisie est... 🃏", value=format_rule(chosen_rule)
-        )
+            embed = discord.Embed()
+            embed.add_field(
+                name="La règle choisie est... 🃏", value=format_rule(chosen_rule)
+            )
+        else:
+            embed = discord.Embed()
+            embed.add_field(name="Erreur ⛔️", value="Vous ne pouvez pas faire ça")
 
         return embed
 
@@ -65,6 +69,10 @@ async def regle(ctx: Context):
                 await interaction.response.edit_message(
                     embed=generate_embed(), view=None
                 )
+        else:
+            await interaction.response.send_message(
+                embed=generate_embed(False), ephemeral=True
+            )
 
     await ctx.respond(embed=generate_embed(), view=generate_view())
 
