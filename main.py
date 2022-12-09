@@ -2,8 +2,9 @@ import os
 import time
 import random
 import discord
-from discord.ext.commands import Context
+from discord import ApplicationContext
 from dotenv import load_dotenv
+
 
 load_dotenv()
 bot = discord.Bot()
@@ -32,12 +33,20 @@ async def on_ready():
     name="règle",
     description="Choisi une règle au hasard parmi toutes celles existantes",
 )
-async def regle(ctx: Context):
+@discord.option(
+    "inconnues",
+    description="Cherche aussi parmi les règles que vous ne connaissez pas",
+    required=False,
+    default=False,
+)
+async def regle(ctx: ApplicationContext, inconnues: bool):
     rules = list(
         set(
             channel.name.strip()
             for channel in ctx.guild.channels
-            if channel.name.startswith("règle-") and channel.name != "règle-de"
+            if channel.name.startswith("règle-")
+            and channel.name != "règle-de"
+            and (inconnues or channel.permissions_for(ctx.author).view_channel)
         )
     )
 
