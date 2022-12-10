@@ -1,10 +1,11 @@
+import enum
 import os
 import time
 import random
 import discord
-from discord import ApplicationContext
+from discord import ApplicationContext, Member, TextChannel, PermissionOverwrite, Embed
 from dotenv import load_dotenv
-
+from discord.abc import GuildChannel
 
 load_dotenv()
 bot = discord.Bot()
@@ -25,7 +26,7 @@ def format_rule(rule: str) -> str:
 
 @bot.event
 async def on_ready():
-    print(f"{time.strftime('[%d-%m-%Y %H:%M:%S]',time.localtime())}")
+    print(f"{time.strftime('[%d-%m-%Y %H:%M:%S]', time.localtime())}")
     print(f"{bot.user} is ready and online!")
 
 
@@ -84,6 +85,96 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
             )
 
     await ctx.respond(embed=generate_embed(), view=generate_view())
+
+
+@bot.slash_command(name="add", description="ajouter des joueurs à vos salons de règles")
+@discord.option("membre1",
+                description="Sélectionne les membres qui auront accès aux salons",
+                required=True,
+                default=None)
+@discord.option("salon1",
+                description="Sélectionne les salons axquels les membres auront accès",
+                required=True,
+                default=None)
+@discord.option("membre2",
+                description="Sélectionne les membres qui auront accès aux salons",
+                required=False,
+                default=None)
+@discord.option("membre3",
+                description="Sélectionne les membres qui auront accès aux salons",
+                required=False,
+                default=None)
+@discord.option("membre4",
+                description="Sélectionne les membres qui auront accès aux salons",
+                required=False,
+                default=None)
+@discord.option("membre5",
+                description="Sélectionne les membres qui auront accès aux salons",
+                required=False,
+                default=None)
+@discord.option("salon2",
+                description="Sélectionne les salons axquels les membres auront accès",
+                required=False,
+                default=None)
+@discord.option("salon3",
+                description="Sélectionne les salons axquels les membres auront accès",
+                required=False,
+                default=None)
+@discord.option("salon4",
+                description="Sélectionne les salons axquels les membres auront accès",
+                required=False,
+                default=None)
+@discord.option("salon5",
+                description="Sélectionne les salons axquels les membres auront accès",
+                required=False,
+                default=None)
+@discord.option(name="voir_la_regle",
+                description="Les membres pourront juste voir le salon mais pas la règle",
+                required=False,
+                default=True)
+async def add(ctx: ApplicationContext, membre1: Member, salon1: GuildChannel, membre2: Member, membre3: Member,
+              membre4: Member, membre5: Member, salon2: GuildChannel, salon3: GuildChannel, salon4: GuildChannel,
+              salon5: GuildChannel, voir_la_regle: bool):
+    members = [membre1, membre2, membre3, membre4, membre5]
+    channels = [salon1, salon2, salon3, salon4, salon5]
+
+    def generate_embed() -> Embed:
+        embed = Embed()
+
+        if len(members) == 0 or len(channels) == 0:
+            embed.add_field(name="Erreur ⛔️", value="Les données fournies ne sont pas valides")
+        elif len(wrong_channels) == 0:
+            embed.add_field(name="Succès !!", value="Tous les membres ont maintenant accaès aux salons")
+        elif len(wrong_channels) == len(channels):
+            embed.add_field(name="Erreur ⛔️", value="Vous êtes propriétaire d'aucun salon fourni")
+        else:
+            val = "Les modifications n'ont pas pu être appliquées pour les salons suivants car vous n'êtes pas propriétaires de ces salons : " + \
+                  wrong_channels[0].name
+            for i in range(1, len(wrong_channels)):
+                val += ", " + wrong_channels[i].name
+            embed.add_field(name="Succès avec erreurs", value=val)
+        return embed
+
+    wrong_channels: list[GuildChannel] = list()
+
+    perm = PermissionOverwrite()
+    perm.view_channel = True
+    perm.read_messages = True
+    perm.read_message_history = voir_la_regle
+
+    perm.update()
+
+    print(ctx.author)
+    for channel in channels:
+        if channel is not None:
+            if channel.permissions_for(ctx.author).manage_channels:
+                for member in members:
+                    if member is not None:
+                        await channel.set_permissions(member, overwrite=perm)
+            else:
+                wrong_channels.append(channel)
+
+    await ctx.respond(embed=generate_embed())
 
 
 bot.run(os.getenv("TOKEN"))
