@@ -208,7 +208,7 @@ async def add(
 
         return embed
 
-    await ctx.respond(embed=generate_embed())
+    await ctx.respond(embed=generate_embed(), ephemeral=True)
 
 
 load_dotenv()
