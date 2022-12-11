@@ -10,6 +10,7 @@ bot = discord.Bot()
 
 
 def format_rule(rule: str) -> str:
+    """Format a channel name to a good looking string"""
     words = rule.split("-")
     formatted_rule = ""
 
@@ -35,7 +36,6 @@ async def on_ready():
 @discord.option(
     "inconnues",
     description="Cherche aussi parmi les règles que vous ne connaissez pas",
-    required=False,
     default=False,
 )
 async def regle(ctx: ApplicationContext, inconnues: bool):
@@ -85,6 +85,46 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
     await ctx.respond(embed=generate_embed(), view=generate_view())
 
 
+async def change_permissions(
+    author: Member,
+    members: list[Member],
+    channels: list[GuildChannel],
+    permission: PermissionOverwrite,
+) -> Embed:
+    """Change permissions and return result in an Embed"""
+    right_channels: list[GuildChannel] = list()
+    wrong_channels: list[GuildChannel] = list()
+
+    for channel in channels:
+        if channel.permissions_for(author).manage_channels:
+            for member in members:
+                await channel.set_permissions(member, overwrite=permission)
+            right_channels.append(channel)
+        else:
+            wrong_channels.append(channel)
+
+    right_names = ", ".join(f"**{channel.name}**" for channel in right_channels)
+    right_message = "Les permissions ont bien été changées pour : " + right_names
+
+    wrong_names = ", ".join(f"**{channel.name}**" for channel in wrong_channels)
+    wrong_message = "Vous n'êtes pas propriétaire des salons suivants : " + wrong_names
+
+    if len(wrong_channels) == 0:
+        title = "Succès ✅"
+        message = right_message
+    elif len(wrong_channels) == len(channels):
+        title = "Erreur ⛔️"
+        message = wrong_message
+    else:
+        title = "Succès avec erreurs ⚠️"
+        message = f"{right_message}\n{wrong_message}"
+
+    embed = Embed()
+    embed.add_field(name=title, value=message)
+
+    return embed
+
+
 @bot.slash_command(
     name="ajouter", description="Ajouter des joueurs à vos salons de règles"
 )
@@ -101,55 +141,46 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
 @discord.option(
     name="voir",
     description="Les membres pourront voir la règle",
-    required=False,
     default=True,
 )
 @discord.option(
     "membre2",
     description="Sélectionne les membres qui auront accès aux salons",
-    required=False,
     default=None,
 )
 @discord.option(
     "membre3",
     description="Sélectionne les membres qui auront accès aux salons",
-    required=False,
     default=None,
 )
 @discord.option(
     "membre4",
     description="Sélectionne les membres qui auront accès aux salons",
-    required=False,
     default=None,
 )
 @discord.option(
     "membre5",
     description="Sélectionne les membres qui auront accès aux salons",
-    required=False,
     default=None,
 )
 @discord.option(
     "salon2",
     description="Sélectionne les salons auxquels les membres auront accès",
-    required=False,
     default=None,
 )
 @discord.option(
     "salon3",
     description="Sélectionne les salons auxquels les membres auront accès",
-    required=False,
     default=None,
 )
 @discord.option(
     "salon4",
     description="Sélectionne les salons auxquels les membres auront accès",
-    required=False,
     default=None,
 )
 @discord.option(
     "salon5",
     description="Sélectionne les salons auxquels les membres auront accès",
-    required=False,
     default=None,
 )
 async def ajouter(
@@ -168,43 +199,15 @@ async def ajouter(
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
-    wrong_channels: list[GuildChannel] = list()
 
-    perm = PermissionOverwrite()
-    perm.view_channel = True
-    perm.read_message_history = voir
-    perm.update()
+    permission = PermissionOverwrite()
+    permission.view_channel = True
+    permission.read_message_history = voir
+    permission.update()
 
-    for channel in channels:
-        if channel.permissions_for(ctx.author).manage_channels:
-            for member in members:
-                await channel.set_permissions(member, overwrite=perm)
-        else:
-            wrong_channels.append(channel)
+    result_embed = await change_permissions(ctx.author, members, channels, permission)
 
-    def generate_embed() -> Embed:
-        embed = Embed()
-
-        if len(wrong_channels) == 0:
-            names = ", ".join(f"**{channel.name}**" for channel in channels)
-            message = "Tous les membres ont maintenant accès à : " + names
-
-            embed.add_field(name="Succès ✅", value=message)
-        elif len(wrong_channels) == len(channels):
-            message = "Vous n'êtes propriétaire d'aucun des salons fournis"
-            embed.add_field(name="Erreur ⛔️", value=message)
-        else:
-            names = ", ".join(f"**{channel.name}**" for channel in wrong_channels)
-            message = (
-                "Les modifications n'ont pas pu être appliquées pour les salons suivants car vous n'êtes pas propriétaires : "
-                + names
-            )
-
-            embed.add_field(name="Succès avec erreurs ⚠️", value=message)
-
-        return embed
-
-    await ctx.respond(embed=generate_embed(), ephemeral=True)
+    await ctx.respond(embed=result_embed, ephemeral=True)
 
 
 @bot.slash_command(
@@ -223,49 +226,41 @@ async def ajouter(
 @discord.option(
     "membre2",
     description="Sélectionne les membres qui n'auront plus accès aux salons",
-    required=False,
     default=None,
 )
 @discord.option(
     "membre3",
     description="Sélectionne les membres qui n'auront plus accès aux salons",
-    required=False,
     default=None,
 )
 @discord.option(
     "membre4",
     description="Sélectionne les membres qui n'auront plus accès aux salons",
-    required=False,
     default=None,
 )
 @discord.option(
     "membre5",
     description="Sélectionne les membres qui n'auront plus accès aux salons",
-    required=False,
     default=None,
 )
 @discord.option(
     "salon2",
     description="Sélectionne les salons auxquels les membres n'auront plus accès",
-    required=False,
     default=None,
 )
 @discord.option(
     "salon3",
     description="Sélectionne les salons auxquels les membres n'auront plus accès",
-    required=False,
     default=None,
 )
 @discord.option(
     "salon4",
     description="Sélectionne les salons auxquels les membres n'auront plus accès",
-    required=False,
     default=None,
 )
 @discord.option(
     "salon5",
     description="Sélectionne les salons auxquels les membres n'auront plus accès",
-    required=False,
     default=None,
 )
 async def supprimer(
@@ -283,43 +278,15 @@ async def supprimer(
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
-    wrong_channels: list[GuildChannel] = list()
 
-    perm = PermissionOverwrite()
-    perm.view_channel = False
-    perm.read_message_history = False
-    perm.update()
+    permission = PermissionOverwrite()
+    permission.view_channel = False
+    permission.read_message_history = False
+    permission.update()
 
-    for channel in channels:
-        if channel.permissions_for(ctx.author).manage_channels:
-            for member in members:
-                await channel.set_permissions(member, overwrite=perm)
-        else:
-            wrong_channels.append(channel)
+    result_embed = await change_permissions(ctx.author, members, channels, permission)
 
-    def generate_embed() -> Embed:
-        embed = Embed()
-
-        if len(wrong_channels) == 0:
-            names = ", ".join(f"**{channel.name}**" for channel in channels)
-            message = "Tous les membres n'ont plus accès à : " + names
-
-            embed.add_field(name="Succès ✅", value=message)
-        elif len(wrong_channels) == len(channels):
-            message = "Vous n'êtes propriétaire d'aucun des salons fournis"
-            embed.add_field(name="Erreur ⛔️", value=message)
-        else:
-            names = ", ".join(f"**{channel.name}**" for channel in wrong_channels)
-            message = (
-                "Les modifications n'ont pas pu être appliquées pour les salons suivants car vous n'êtes pas propriétaires : "
-                + names
-            )
-
-            embed.add_field(name="Succès avec erreurs ⚠️", value=message)
-
-        return embed
-
-    await ctx.respond(embed=generate_embed(), ephemeral=True)
+    await ctx.respond(embed=result_embed, ephemeral=True)
 
 
 load_dotenv()
