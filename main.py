@@ -4,9 +4,10 @@ import random
 import discord
 from dotenv import load_dotenv
 from discord.abc import GuildChannel
+from discord.ui import Button, View
 from discord import ApplicationContext, Member, PermissionOverwrite, Embed
 
-bot = discord.Bot()
+bot = discord.Bot(intents=discord.Intents.all())
 
 
 def format_rule(rule: str) -> str:
@@ -49,7 +50,7 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
         )
     )
 
-    def generate_embed(allowed: bool = True) -> discord.Embed:
+    def generate_embed(allowed: bool = True) -> Embed:
         embed = Embed()
 
         if allowed:
@@ -63,11 +64,11 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
 
         return embed
 
-    def generate_view() -> discord.ui.View:
-        reroll_button = discord.ui.Button(label="Reroll")
+    def generate_view() -> View:
+        reroll_button = Button(label="Reroll")
         reroll_button.callback = reroll
 
-        return discord.ui.View(reroll_button, disable_on_timeout=True)
+        return View(reroll_button, disable_on_timeout=True)
 
     async def reroll(interaction: discord.Interaction):
         if interaction.user == ctx.author:
@@ -86,10 +87,10 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
 
 
 async def change_permissions(
-        author: Member,
-        members: list[Member],
-        channels: list[GuildChannel],
-        permission: PermissionOverwrite,
+    author: Member,
+    members: list[Member],
+    channels: list[GuildChannel],
+    permission: PermissionOverwrite,
 ) -> Embed:
     """Change permissions and return result in an Embed"""
     right_channels: list[GuildChannel] = list()
@@ -184,18 +185,18 @@ async def change_permissions(
     default=None,
 )
 async def ajouter(
-        ctx: ApplicationContext,
-        membre1: Member,
-        salon1: GuildChannel,
-        voir: bool,
-        membre2: Member,
-        membre3: Member,
-        membre4: Member,
-        membre5: Member,
-        salon2: GuildChannel,
-        salon3: GuildChannel,
-        salon4: GuildChannel,
-        salon5: GuildChannel,
+    ctx: ApplicationContext,
+    membre1: Member,
+    salon1: GuildChannel,
+    voir: bool,
+    membre2: Member,
+    membre3: Member,
+    membre4: Member,
+    membre5: Member,
+    salon2: GuildChannel,
+    salon3: GuildChannel,
+    salon4: GuildChannel,
+    salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -264,17 +265,17 @@ async def ajouter(
     default=None,
 )
 async def supprimer(
-        ctx: ApplicationContext,
-        membre1: Member,
-        salon1: GuildChannel,
-        membre2: Member,
-        membre3: Member,
-        membre4: Member,
-        membre5: Member,
-        salon2: GuildChannel,
-        salon3: GuildChannel,
-        salon4: GuildChannel,
-        salon5: GuildChannel,
+    ctx: ApplicationContext,
+    membre1: Member,
+    salon1: GuildChannel,
+    membre2: Member,
+    membre3: Member,
+    membre4: Member,
+    membre5: Member,
+    salon2: GuildChannel,
+    salon3: GuildChannel,
+    salon4: GuildChannel,
+    salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -290,52 +291,74 @@ async def supprimer(
 
 
 @bot.slash_command(
-    name="résumé", description="Affichage de toutes les personnes pouvant voir vos règles"
+    name="résumé",
+    description="Affichage de toutes les personnes pouvant voir vos règles",
 )
 async def resume(ctx: ApplicationContext):
-    if type(ctx.author) is not Member:
-        return
-    else:
-        auth: Member = ctx.author
+    author = ctx.author
+    # get author category
+    author_category = None
 
-    external_user: list[int] = [1050144574565257267, 103991163132654396]
-    c = None
-    for channel in ctx.guild.channels:
-        if channel.permissions_for(auth).manage_channels and channel.type == discord.ChannelType.category:
-            c = await channel.create_text_channel("affichage de toutes vos règles")
-            embed: Embed = Embed()
-            embed.add_field(name="Déplacement de salon", value="Allez dans le salon suivant : " + c.mention + " !")
-            await ctx.respond(embed=embed)
+    for category in ctx.guild.categories:
+        if category.permissions_for(author).manage_channels:
+            author_category = category
             break
 
-    for channel in ctx.guild.channels:
-        if channel.name.startswith("règle-") and channel.name != "règle-de" and channel.permissions_for(
-                auth).manage_channels:
-            # si jamais tu avais la possibilité de tout mettre sur une ligne... (tout ce qui suit)
-            member_list: set[Member] = set(filter(lambda m: m.id not in external_user, channel.members))
-            member_name: list[str] = list()
-            for m in member_list:
-                member_name.append(m.mention)
-            member_msg = ", ".join(member_name)
+    # prevent someone with no categories from trying
+    if author_category is None:
+        error_embed = Embed()
+        error_embed.add_field(name="Erreur ⛔️", value="Vous n'avez aucune catégorie")
 
-            await c.send(channel.mention + ":\n" + member_msg)
+        return await ctx.respond(embed=error_embed, ephemeral=True)
+    # else create channel
+    else:
+        resume_channel = await author_category.create_text_channel(
+            "affichage de toutes vos règles"
+        )
 
-    em = Embed()
-    em.add_field(name="Suppresion du salon", value="Cliquer sur le bouton suivant pour supprimer le salon")
+        embed = Embed()
+        embed.add_field(
+            name="Déplacement de salon ✅",
+            value="Allez dans le salon suivant : " + resume_channel.mention + " !",
+        )
 
-    remove_btn = discord.ui.Button(label="Supprimer")
+        await ctx.respond(embed=embed)
+
+    # create message
+    message = ""
+
+    for channel in author_category.channels:
+        if channel.name.startswith("règle-") and channel.name != "règle-de":
+            member_names = ", ".join(
+                member.display_name
+                for member in channel.members
+                if not member.guild_permissions.administrator
+            )
+
+            message += f"{channel.mention}:\n{member_names}\n"
+
+    # send message
+    async def remove_channel_from_rm_btn(interaction: discord.Interaction):
+        if interaction.user == author:
+            channel = bot.get_channel(interaction.channel_id)
+            await channel.delete()
+        else:
+            error_embed = Embed()
+            error_embed.add_field(name="Erreur ⛔️", value="Vous ne pouvez pas faire ça")
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+
+    embed = Embed()
+    embed.add_field(
+        name="Vos règles 📏",
+        value=message,
+    )
+
+    remove_btn = Button(label="Supprimer")
     remove_btn.callback = remove_channel_from_rm_btn
 
-    discord.ui.View(remove_btn, disable_on_timeout=True)
+    view = View(remove_btn, timeout=None)
 
-    await c.send(embed=em, view=discord.ui.View(remove_btn, disable_on_timeout=True))
-
-
-async def remove_channel_from_rm_btn(interaction: discord.Interaction):
-    channel_id: int = interaction.channel_id
-
-    c = await bot.guilds[0].fetch_channel(channel_id)
-    await c.delete()
+    await resume_channel.send(embed=embed, view=view)
 
 
 load_dotenv()
