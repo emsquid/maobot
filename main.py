@@ -86,10 +86,10 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
 
 
 async def change_permissions(
-    author: Member,
-    members: list[Member],
-    channels: list[GuildChannel],
-    permission: PermissionOverwrite,
+        author: Member,
+        members: list[Member],
+        channels: list[GuildChannel],
+        permission: PermissionOverwrite,
 ) -> Embed:
     """Change permissions and return result in an Embed"""
     right_channels: list[GuildChannel] = list()
@@ -184,18 +184,18 @@ async def change_permissions(
     default=None,
 )
 async def ajouter(
-    ctx: ApplicationContext,
-    membre1: Member,
-    salon1: GuildChannel,
-    voir: bool,
-    membre2: Member,
-    membre3: Member,
-    membre4: Member,
-    membre5: Member,
-    salon2: GuildChannel,
-    salon3: GuildChannel,
-    salon4: GuildChannel,
-    salon5: GuildChannel,
+        ctx: ApplicationContext,
+        membre1: Member,
+        salon1: GuildChannel,
+        voir: bool,
+        membre2: Member,
+        membre3: Member,
+        membre4: Member,
+        membre5: Member,
+        salon2: GuildChannel,
+        salon3: GuildChannel,
+        salon4: GuildChannel,
+        salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -264,17 +264,17 @@ async def ajouter(
     default=None,
 )
 async def supprimer(
-    ctx: ApplicationContext,
-    membre1: Member,
-    salon1: GuildChannel,
-    membre2: Member,
-    membre3: Member,
-    membre4: Member,
-    membre5: Member,
-    salon2: GuildChannel,
-    salon3: GuildChannel,
-    salon4: GuildChannel,
-    salon5: GuildChannel,
+        ctx: ApplicationContext,
+        membre1: Member,
+        salon1: GuildChannel,
+        membre2: Member,
+        membre3: Member,
+        membre4: Member,
+        membre5: Member,
+        salon2: GuildChannel,
+        salon3: GuildChannel,
+        salon4: GuildChannel,
+        salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -287,6 +287,55 @@ async def supprimer(
     result_embed = await change_permissions(ctx.author, members, channels, permission)
 
     await ctx.respond(embed=result_embed, ephemeral=True)
+
+
+@bot.slash_command(
+    name="résumé", description="Affichage de toutes les personnes pouvant voir vos règles"
+)
+async def resume(ctx: ApplicationContext):
+    if type(ctx.author) is not Member:
+        return
+    else:
+        auth: Member = ctx.author
+
+    external_user: list[int] = [1050144574565257267, 103991163132654396]
+    c = None
+    for channel in ctx.guild.channels:
+        if channel.permissions_for(auth).manage_channels and channel.type == discord.ChannelType.category:
+            c = await channel.create_text_channel("affichage de toutes vos règles")
+            embed: Embed = Embed()
+            embed.add_field(name="Déplacement de salon", value="Allez dans le salon suivant : " + c.mention + " !")
+            await ctx.respond(embed=embed)
+            break
+
+    for channel in ctx.guild.channels:
+        if channel.name.startswith("règle-") and channel.name != "règle-de" and channel.permissions_for(
+                auth).manage_channels:
+            # si jamais tu avais la possibilité de tout mettre sur une ligne... (tout ce qui suit)
+            member_list: set[Member] = set(filter(lambda m: m.id not in external_user, channel.members))
+            member_name: list[str] = list()
+            for m in member_list:
+                member_name.append(m.mention)
+            member_msg = ", ".join(member_name)
+
+            await c.send(channel.mention + ":\n" + member_msg)
+
+    em = Embed()
+    em.add_field(name="Suppresion du salon", value="Cliquer sur le bouton suivant pour supprimer le salon")
+
+    remove_btn = discord.ui.Button(label="Supprimer")
+    remove_btn.callback = remove_channel_from_rm_btn
+
+    discord.ui.View(remove_btn, disable_on_timeout=True)
+
+    await c.send(embed=em, view=discord.ui.View(remove_btn, disable_on_timeout=True))
+
+
+async def remove_channel_from_rm_btn(interaction: discord.Interaction):
+    channel_id: int = interaction.channel_id
+
+    c = await bot.guilds[0].fetch_channel(channel_id)
+    await c.delete()
 
 
 load_dotenv()
