@@ -87,10 +87,10 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
 
 
 async def change_permissions(
-    author: Member,
-    members: list[Member],
-    channels: list[GuildChannel],
-    permission: PermissionOverwrite,
+        author: Member,
+        members: list[Member],
+        channels: list[GuildChannel],
+        permission: PermissionOverwrite,
 ) -> Embed:
     """Change permissions and return result in an Embed"""
     right_channels: list[GuildChannel] = list()
@@ -185,18 +185,18 @@ async def change_permissions(
     default=None,
 )
 async def ajouter(
-    ctx: ApplicationContext,
-    membre1: Member,
-    salon1: GuildChannel,
-    voir: bool,
-    membre2: Member,
-    membre3: Member,
-    membre4: Member,
-    membre5: Member,
-    salon2: GuildChannel,
-    salon3: GuildChannel,
-    salon4: GuildChannel,
-    salon5: GuildChannel,
+        ctx: ApplicationContext,
+        membre1: Member,
+        salon1: GuildChannel,
+        voir: bool,
+        membre2: Member,
+        membre3: Member,
+        membre4: Member,
+        membre5: Member,
+        salon2: GuildChannel,
+        salon3: GuildChannel,
+        salon4: GuildChannel,
+        salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -265,17 +265,17 @@ async def ajouter(
     default=None,
 )
 async def supprimer(
-    ctx: ApplicationContext,
-    membre1: Member,
-    salon1: GuildChannel,
-    membre2: Member,
-    membre3: Member,
-    membre4: Member,
-    membre5: Member,
-    salon2: GuildChannel,
-    salon3: GuildChannel,
-    salon4: GuildChannel,
-    salon5: GuildChannel,
+        ctx: ApplicationContext,
+        membre1: Member,
+        salon1: GuildChannel,
+        membre2: Member,
+        membre3: Member,
+        membre4: Member,
+        membre5: Member,
+        salon2: GuildChannel,
+        salon3: GuildChannel,
+        salon4: GuildChannel,
+        salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -350,6 +350,52 @@ async def resume(ctx: ApplicationContext):
 
     await resume_channel.purge()
     await resume_channel.send(embed=embed)
+
+
+def get_keys_from_value(d: dict[int: int], val: int) -> list[int]:
+    val_list: list[int] = list()
+    for key, v in d.items():
+        if v == val:
+            val_list.append(key)
+
+    return val_list
+
+
+@bot.slash_command(name="classement", description="Obtenez le classement de ceux qui connaissent le plus de règles")
+@discord.option(name="inclure_pas_voir",
+                description="Inclure les personnes qui ne peuvent pas voir les règles (defaut: Vrai)",
+                required=False,
+                default=True)
+async def classement(ctx: ApplicationContext, inclure_pas_voir: bool):
+    member_dict: dict[int: int] = dict()
+
+    for channel in ctx.guild.channels:
+        if channel.type != discord.ChannelType.category:
+            for m in channel.members:
+                if not channel.permissions_for(m).manage_channels and not m.guild_permissions.administrator and (channel.permissions_for(m).read_message_history != inclure_pas_voir or inclure_pas_voir):
+                    if m.id not in member_dict:
+                        member_dict[m.id] = 1
+                    else:
+                        member_dict[m.id] += 1
+
+    msg = ""
+    real_max: int = -1
+    for val in member_dict.values():
+        if val > real_max:
+            real_max = val
+
+    rank: int = 1
+
+    for x in reversed(range(real_max + 1)):
+        val_list: list[int] = get_keys_from_value(member_dict, x)
+        ex_aequo = "-ex aequo" if len(val_list) >= 2 else ""
+        for idd in val_list:
+            msg += str(rank) + ex_aequo + ": **" + ctx.guild.get_member(
+                idd).display_name + "** avec **" + str(x) + "** règles\n"
+        if len(val_list) >= 1:
+            rank += 1
+
+    await ctx.respond(msg)
 
 
 load_dotenv()
