@@ -23,7 +23,7 @@ async def on_ready():
 )
 @discord.option(
     "inconnues",
-    description="Cherche aussi parmi les règles que vous ne connaissez pas",
+    description="Cherche aussi parmi les règles que vous ne connaissez pas (défaut: Faux)",
     default=False,
 )
 async def regle(ctx: ApplicationContext, inconnues: bool):
@@ -84,7 +84,7 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
 )
 @discord.option(
     name="voir",
-    description="Les membres pourront voir la règle",
+    description="Les membres pourront voir la règle (défaut: Vrai)",
     default=True,
 )
 @discord.option(
@@ -250,7 +250,6 @@ async def resume(ctx: ApplicationContext):
 
         return await ctx.respond(embed=error_embed, ephemeral=True)
 
-    # get resume channel
     resume_channel = await helper.get_resume_channel(author_category)
 
     await ctx.respond(
@@ -268,7 +267,7 @@ async def resume(ctx: ApplicationContext):
             member_names = ", ".join(
                 member.display_name
                 for member in channel.members
-                if not member.guild_permissions.administrator
+                if not channel.permissions_for(member).manage_channels
             )
 
             message += f"{channel.mention}:\n{member_names}\n"
