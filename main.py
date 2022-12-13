@@ -302,7 +302,6 @@ async def resume(ctx: ApplicationContext):
     for category in ctx.guild.categories:
         if category.permissions_for(author).manage_channels:
             author_category = category
-            break
 
     # prevent someone with no categories from trying
     if author_category is None:
@@ -310,19 +309,24 @@ async def resume(ctx: ApplicationContext):
         error_embed.add_field(name="Erreur ⛔️", value="Vous n'avez aucune catégorie")
 
         return await ctx.respond(embed=error_embed, ephemeral=True)
-    # else create channel
-    else:
-        resume_channel = await author_category.create_text_channel(
-            "affichage de toutes vos règles"
-        )
 
-        embed = Embed()
-        embed.add_field(
-            name="Déplacement de salon ✅",
-            value="Allez dans le salon suivant : " + resume_channel.mention + " !",
-        )
+    # get resume channel
+    resume_channel = None
 
-        await ctx.respond(embed=embed)
+    for channel in author_category.channels:
+        if channel.name == "mes-règles":
+            resume_channel = channel
+
+    if resume_channel is None:
+        resume_channel = await author_category.create_text_channel("mes-règles")
+
+    embed = Embed()
+    embed.add_field(
+        name="Déplacement de salon ✅",
+        value="Allez dans le salon suivant : " + resume_channel.mention + " !",
+    )
+
+    await ctx.respond(embed=embed)
 
     # create message
     message = ""
@@ -338,27 +342,14 @@ async def resume(ctx: ApplicationContext):
             message += f"{channel.mention}:\n{member_names}\n"
 
     # send message
-    async def remove_channel_from_rm_btn(interaction: discord.Interaction):
-        if interaction.user == author:
-            channel = bot.get_channel(interaction.channel_id)
-            await channel.delete()
-        else:
-            error_embed = Embed()
-            error_embed.add_field(name="Erreur ⛔️", value="Vous ne pouvez pas faire ça")
-            await interaction.response.send_message(embed=error_embed, ephemeral=True)
-
     embed = Embed()
     embed.add_field(
-        name="Vos règles 📏",
+        name=f"Règles de {author.display_name} 📏",
         value=message,
     )
 
-    remove_btn = Button(label="Supprimer")
-    remove_btn.callback = remove_channel_from_rm_btn
-
-    view = View(remove_btn, timeout=None)
-
-    await resume_channel.send(embed=embed, view=view)
+    await resume_channel.purge()
+    await resume_channel.send(embed=embed)
 
 
 load_dotenv()
