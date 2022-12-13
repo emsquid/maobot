@@ -2,26 +2,13 @@ import os
 import time
 import random
 import discord
+import src.helper as helper
 from dotenv import load_dotenv
 from discord.abc import GuildChannel
 from discord.ui import Button, View
 from discord import ApplicationContext, Member, PermissionOverwrite, Embed
 
 bot = discord.Bot(intents=discord.Intents.all())
-
-
-def format_rule(rule: str) -> str:
-    """Format a channel name to a good looking string"""
-    words = rule.split("-")
-    formatted_rule = ""
-
-    for word in words:
-        if word in ["d", "l"]:
-            formatted_rule += word + "'"
-        else:
-            formatted_rule += word + " "
-
-    return formatted_rule.capitalize()
 
 
 @bot.event
@@ -51,18 +38,14 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
     )
 
     def generate_embed(allowed: bool = True) -> Embed:
-        embed = Embed()
-
         if allowed:
             chosen_rule = rules.pop(random.randrange(len(rules)))
 
-            embed.add_field(
-                name="La règle choisie est... 🃏", value=format_rule(chosen_rule)
+            return helper.create_embed(
+                "La règle choisie est... 🃏", helper.format_rule(chosen_rule)
             )
         else:
-            embed.add_field(name="Erreur ⛔️", value="Vous ne pouvez pas faire ça")
-
-        return embed
+            return helper.create_embed("Erreur ⛔️", "Vous ne pouvez pas faire ça")
 
     def generate_view() -> View:
         reroll_button = Button(label="Reroll")
@@ -84,46 +67,6 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
             )
 
     await ctx.respond(embed=generate_embed(), view=generate_view())
-
-
-async def change_permissions(
-        author: Member,
-        members: list[Member],
-        channels: list[GuildChannel],
-        permission: PermissionOverwrite,
-) -> Embed:
-    """Change permissions and return result in an Embed"""
-    right_channels: list[GuildChannel] = list()
-    wrong_channels: list[GuildChannel] = list()
-
-    for channel in channels:
-        if channel.permissions_for(author).manage_channels:
-            for member in members:
-                await channel.set_permissions(member, overwrite=permission)
-            right_channels.append(channel)
-        else:
-            wrong_channels.append(channel)
-
-    right_names = ", ".join(f"**{channel.name}**" for channel in right_channels)
-    right_message = "Les permissions ont bien été changées pour : " + right_names
-
-    wrong_names = ", ".join(f"**{channel.name}**" for channel in wrong_channels)
-    wrong_message = "Vous n'êtes pas propriétaire des salons suivants : " + wrong_names
-
-    if len(wrong_channels) == 0:
-        title = "Succès ✅"
-        message = right_message
-    elif len(wrong_channels) == len(channels):
-        title = "Erreur ⛔️"
-        message = wrong_message
-    else:
-        title = "Succès avec erreurs ⚠️"
-        message = f"{right_message}\n{wrong_message}"
-
-    embed = Embed()
-    embed.add_field(name=title, value=message)
-
-    return embed
 
 
 @bot.slash_command(
@@ -185,18 +128,18 @@ async def change_permissions(
     default=None,
 )
 async def ajouter(
-        ctx: ApplicationContext,
-        membre1: Member,
-        salon1: GuildChannel,
-        voir: bool,
-        membre2: Member,
-        membre3: Member,
-        membre4: Member,
-        membre5: Member,
-        salon2: GuildChannel,
-        salon3: GuildChannel,
-        salon4: GuildChannel,
-        salon5: GuildChannel,
+    ctx: ApplicationContext,
+    membre1: Member,
+    salon1: GuildChannel,
+    voir: bool,
+    membre2: Member,
+    membre3: Member,
+    membre4: Member,
+    membre5: Member,
+    salon2: GuildChannel,
+    salon3: GuildChannel,
+    salon4: GuildChannel,
+    salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -206,7 +149,9 @@ async def ajouter(
     permission.read_message_history = voir
     permission.update()
 
-    result_embed = await change_permissions(ctx.author, members, channels, permission)
+    result_embed = await helper.change_permissions(
+        ctx.author, members, channels, permission
+    )
 
     await ctx.respond(embed=result_embed, ephemeral=True)
 
@@ -265,17 +210,17 @@ async def ajouter(
     default=None,
 )
 async def supprimer(
-        ctx: ApplicationContext,
-        membre1: Member,
-        salon1: GuildChannel,
-        membre2: Member,
-        membre3: Member,
-        membre4: Member,
-        membre5: Member,
-        salon2: GuildChannel,
-        salon3: GuildChannel,
-        salon4: GuildChannel,
-        salon5: GuildChannel,
+    ctx: ApplicationContext,
+    membre1: Member,
+    salon1: GuildChannel,
+    membre2: Member,
+    membre3: Member,
+    membre4: Member,
+    membre5: Member,
+    salon2: GuildChannel,
+    salon3: GuildChannel,
+    salon4: GuildChannel,
+    salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -285,7 +230,9 @@ async def supprimer(
     permission.read_message_history = False
     permission.update()
 
-    result_embed = await change_permissions(ctx.author, members, channels, permission)
+    result_embed = await helper.change_permissions(
+        ctx.author, members, channels, permission
+    )
 
     await ctx.respond(embed=result_embed, ephemeral=True)
 
@@ -295,38 +242,23 @@ async def supprimer(
     description="Affichage de toutes les personnes pouvant voir vos règles",
 )
 async def resume(ctx: ApplicationContext):
-    author = ctx.author
-    # get author category
-    author_category = None
-
-    for category in ctx.guild.categories:
-        if category.permissions_for(author).manage_channels:
-            author_category = category
+    author_category = helper.get_category(ctx.author, ctx.guild)
 
     # prevent someone with no categories from trying
     if author_category is None:
-        error_embed = Embed()
-        error_embed.add_field(name="Erreur ⛔️", value="Vous n'avez aucune catégorie")
+        error_embed = helper.create_embed("Erreur ⛔️", "Vous n'avez aucune catégorie")
 
         return await ctx.respond(embed=error_embed, ephemeral=True)
 
     # get resume channel
-    resume_channel = None
+    resume_channel = await helper.get_resume_channel(author_category)
 
-    for channel in author_category.channels:
-        if channel.name == "mes-règles":
-            resume_channel = channel
-
-    if resume_channel is None:
-        resume_channel = await author_category.create_text_channel("mes-règles")
-
-    embed = Embed()
-    embed.add_field(
-        name="Déplacement de salon ✅",
-        value="Allez dans le salon suivant : " + resume_channel.mention + " !",
+    await ctx.respond(
+        embed=helper.create_embed(
+            "Déplacement de salon ✅",
+            f"Allez dans le salon suivant : {resume_channel.mention} !",
+        )
     )
-
-    await ctx.respond(embed=embed)
 
     # create message
     message = ""
@@ -342,60 +274,46 @@ async def resume(ctx: ApplicationContext):
             message += f"{channel.mention}:\n{member_names}\n"
 
     # send message
-    embed = Embed()
-    embed.add_field(
-        name=f"Règles de {author.display_name} 📏",
-        value=message,
+    embed = helper.create_embed(
+        f"Règles de {ctx.author.display_name} 📏",
+        message,
     )
 
     await resume_channel.purge()
     await resume_channel.send(embed=embed)
 
 
-def get_keys_from_value(d: dict[int: int], val: int) -> list[int]:
-    val_list: list[int] = list()
-    for key, v in d.items():
-        if v == val:
-            val_list.append(key)
+@bot.slash_command(
+    name="classement",
+    description="Obtenez le classement de ceux qui connaissent le plus de règles",
+)
+@discord.option(
+    name="cache",
+    description="Compte aussi les règles dont seul le nom est visible (défaut: Vrai)",
+    default=True,
+)
+async def classement(ctx: ApplicationContext, cache: bool):
+    rules_count = helper.count_known_rules(ctx.guild, cache)
+    # create message
+    message = ""
 
-    return val_list
+    real_max = max(rules_count.values())
+    rank = 1
 
+    for n in range(real_max, -1, -1):
+        members_id = helper.get_keys_from_value(rules_count, n)
 
-@bot.slash_command(name="classement", description="Obtenez le classement de ceux qui connaissent le plus de règles")
-@discord.option(name="inclure_pas_voir",
-                description="Inclure les personnes qui ne peuvent pas voir les règles (defaut: Vrai)",
-                required=False,
-                default=True)
-async def classement(ctx: ApplicationContext, inclure_pas_voir: bool):
-    member_dict: dict[int: int] = dict()
+        if len(members_id) >= 1:
+            message += f"{rank} "
+            for id in members_id:
+                message += f"- **{ctx.guild.get_member(id).display_name}** "
+            message += f"avec **{n}** règles\n"
 
-    for channel in ctx.guild.channels:
-        if channel.type != discord.ChannelType.category:
-            for m in channel.members:
-                if not channel.permissions_for(m).manage_channels and not m.guild_permissions.administrator and (channel.permissions_for(m).read_message_history != inclure_pas_voir or inclure_pas_voir):
-                    if m.id not in member_dict:
-                        member_dict[m.id] = 1
-                    else:
-                        member_dict[m.id] += 1
-
-    msg = ""
-    real_max: int = -1
-    for val in member_dict.values():
-        if val > real_max:
-            real_max = val
-
-    rank: int = 1
-
-    for x in reversed(range(real_max + 1)):
-        val_list: list[int] = get_keys_from_value(member_dict, x)
-        ex_aequo = "-ex aequo" if len(val_list) >= 2 else ""
-        for idd in val_list:
-            msg += str(rank) + ex_aequo + ": **" + ctx.guild.get_member(
-                idd).display_name + "** avec **" + str(x) + "** règles\n"
-        if len(val_list) >= 1:
             rank += 1
 
-    await ctx.respond(msg)
+    embed = helper.create_embed("Classement 🏆", message)
+
+    await ctx.respond(embed=embed)
 
 
 load_dotenv()
