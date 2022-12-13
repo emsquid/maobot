@@ -68,7 +68,7 @@ async def change_permissions(
     return create_embed(title, message)
 
 
-def get_category(member: Member, guild: Guild) -> CategoryChannel | None:
+def get_category(member: Member, guild: Guild) -> CategoryChannel:
     """Return the category belonging to the member"""
     for category in guild.categories:
         if category.permissions_for(member).manage_channels:
