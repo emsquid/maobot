@@ -128,18 +128,18 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
     default=None,
 )
 async def ajouter(
-    ctx: ApplicationContext,
-    membre1: Member,
-    salon1: GuildChannel,
-    voir: bool,
-    membre2: Member,
-    membre3: Member,
-    membre4: Member,
-    membre5: Member,
-    salon2: GuildChannel,
-    salon3: GuildChannel,
-    salon4: GuildChannel,
-    salon5: GuildChannel,
+        ctx: ApplicationContext,
+        membre1: Member,
+        salon1: GuildChannel,
+        voir: bool,
+        membre2: Member,
+        membre3: Member,
+        membre4: Member,
+        membre5: Member,
+        salon2: GuildChannel,
+        salon3: GuildChannel,
+        salon4: GuildChannel,
+        salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -161,66 +161,66 @@ async def ajouter(
 )
 @discord.option(
     "membre1",
-    description="Sélectionne les membres qui n'auront plus accès aux salons",
+    description="Sélectionne un membre qui n'auront plus accès aux salons",
     required=True,
 )
 @discord.option(
     "salon1",
-    description="Sélectionne les salons auxquels les membres n'auront plus accès",
+    description="Sélectionne un salons auquel les membres n'auront plus accès",
     required=True,
 )
 @discord.option(
     "membre2",
-    description="Sélectionne les membres qui n'auront plus accès aux salons",
+    description="Sélectionne un membre qui n'auront plus accès aux salons",
     default=None,
 )
 @discord.option(
     "membre3",
-    description="Sélectionne les membres qui n'auront plus accès aux salons",
+    description="Sélectionne un membre qui n'auront plus accès aux salons",
     default=None,
 )
 @discord.option(
     "membre4",
-    description="Sélectionne les membres qui n'auront plus accès aux salons",
+    description="Sélectionne un membre qui n'auront plus accès aux salons",
     default=None,
 )
 @discord.option(
     "membre5",
-    description="Sélectionne les membres qui n'auront plus accès aux salons",
+    description="Sélectionne un membre qui n'auront plus accès aux salons",
     default=None,
 )
 @discord.option(
     "salon2",
-    description="Sélectionne les salons auxquels les membres n'auront plus accès",
+    description="Sélectionne un salons auquel les membres n'auront plus accès",
     default=None,
 )
 @discord.option(
     "salon3",
-    description="Sélectionne les salons auxquels les membres n'auront plus accès",
+    description="Sélectionne un salons auquel les membres n'auront plus accès",
     default=None,
 )
 @discord.option(
     "salon4",
-    description="Sélectionne les salons auxquels les membres n'auront plus accès",
+    description="Sélectionne un salons auquel les membres n'auront plus accès",
     default=None,
 )
 @discord.option(
     "salon5",
-    description="Sélectionne les salons auxquels les membres n'auront plus accès",
+    description="Sélectionne un salons auquel les membres n'auront plus accès",
     default=None,
 )
 async def supprimer(
-    ctx: ApplicationContext,
-    membre1: Member,
-    salon1: GuildChannel,
-    membre2: Member,
-    membre3: Member,
-    membre4: Member,
-    membre5: Member,
-    salon2: GuildChannel,
-    salon3: GuildChannel,
-    salon4: GuildChannel,
-    salon5: GuildChannel,
+        ctx: ApplicationContext,
+        membre1: Member,
+        salon1: GuildChannel,
+        membre2: Member,
+        membre3: Member,
+        membre4: Member,
+        membre5: Member,
+        salon2: GuildChannel,
+        salon3: GuildChannel,
+        salon4: GuildChannel,
+        salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -261,9 +261,11 @@ async def resume(ctx: ApplicationContext):
 
     # create message
     message = ""
+    nb_c = 0
 
     for channel in author_category.channels:
         if channel.name.startswith("règle-") and channel.name != "règle-de":
+            nb_c += 1
             member_names = ", ".join(
                 member.display_name
                 for member in channel.members
@@ -274,7 +276,7 @@ async def resume(ctx: ApplicationContext):
 
     # send message
     embed = helper.create_embed(
-        f"Règles de {ctx.author.display_name} 📏",
+        f"Règles de {ctx.author.display_name} ({nb_c}) 📏",
         message,
     )
 
@@ -291,8 +293,11 @@ async def resume(ctx: ApplicationContext):
     description="Compte aussi les règles dont seul le nom est visible (défaut: Vrai)",
     default=True,
 )
-async def classement(ctx: ApplicationContext, cache: bool):
-    rules_count = helper.count_known_rules(ctx.guild, cache)
+@discord.option(name="votres",
+                description="Comptez aussi les règles qui vous appartiennent (défaut: Faux)",
+                default=False)
+async def classement(ctx: ApplicationContext, cache: bool, votres: bool):
+    rules_count = helper.count_known_rules_for_member(ctx.guild, cache, votres)
     # create message
     message = ""
 
@@ -313,6 +318,17 @@ async def classement(ctx: ApplicationContext, cache: bool):
     embed = helper.create_embed("Classement 🏆", message)
 
     await ctx.respond(embed=embed)
+
+
+@bot.slash_command(name="aide",
+                   descrition="obtenez toutes les commandes disponibles")
+async def aide(ctx: ApplicationContext):
+    msg = "Voici toutes les commandes dont vous disposez : \n"
+    for command in bot.all_commands:
+        msg = f"{msg}{command.name}: {command.description}"
+
+    await ctx.respond(msg)
+
 
 
 load_dotenv()
