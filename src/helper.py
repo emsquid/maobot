@@ -86,7 +86,9 @@ async def get_resume_channel(category: CategoryChannel) -> TextChannel:
     return await category.create_text_channel("mes-règles")
 
 
-def count_known_rules_for_member(guild: Guild, cache: bool, owns: bool) -> dict[int:int]:
+def count_known_rules_for_member(
+    guild: Guild, cache: bool, owns: bool
+) -> dict[int:int]:
     """Return a dictionnary with member id as key and the rules they know as value"""
     rules_count: dict[int:int] = dict()
 
@@ -95,6 +97,8 @@ def count_known_rules_for_member(guild: Guild, cache: bool, owns: bool) -> dict[
             for member in channel.members:
                 if (
                     channel.name.startswith("règle")
+                    and not channel.name == "règle-de"
+                    and (not channel.permissions_for(member).administrator)
                     and (not channel.permissions_for(member).manage_channels or owns)
                     and (channel.permissions_for(member).read_message_history or cache)
                 ):

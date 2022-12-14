@@ -254,7 +254,7 @@ async def resume(ctx: ApplicationContext):
 
     await ctx.respond(
         embed=helper.create_embed(
-            "Déplacement de salon ✅",
+            "Succès ✅",
             f"Allez dans le salon suivant : {resume_channel.mention} !",
         ),
         ephemeral=True,
@@ -262,22 +262,22 @@ async def resume(ctx: ApplicationContext):
 
     # create message
     message = ""
-    nb_c = 0
+    nb_rules = 0
 
     for channel in author_category.channels:
         if channel.name.startswith("règle-") and channel.name != "règle-de":
-            nb_c += 1
             member_names = ", ".join(
                 member.display_name
                 for member in channel.members
-                if not channel.permissions_for(member).manage_channels
+                if not channel.permissions_for(member).administrator
             )
 
             message += f"{channel.mention}:\n{member_names}\n"
+            nb_rules += 1
 
     # send message
     embed = helper.create_embed(
-        f"Règles de {ctx.author.display_name} ({nb_c}) 📏",
+        f"Règles de {ctx.author.display_name} ({nb_rules}) 📏",
         message,
     )
 
@@ -296,7 +296,7 @@ async def resume(ctx: ApplicationContext):
 )
 @discord.option(
     name="votres",
-    description="Comptez aussi les règles qui vous appartiennent (défaut: Faux)",
+    description="Compte aussi les règles qui vous appartiennent (défaut: Faux)",
     default=False,
 )
 async def classement(ctx: ApplicationContext, cache: bool, votres: bool):
