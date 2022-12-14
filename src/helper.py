@@ -78,7 +78,7 @@ def get_category(member: Member, guild: Guild) -> CategoryChannel:
 
 
 async def get_resume_channel(category: CategoryChannel) -> TextChannel:
-    """Return the resume channel from the category"""
+    """Return the resume channel from the category, create it if it doesn't exist"""
     for channel in category.channels:
         if channel.name == "mes-règles":
             return channel
@@ -104,7 +104,7 @@ def count_known_rules_for_member(guild: Guild, cache: bool, owns: bool) -> dict[
 
 
 def get_keys_from_value(dic: dict[int:int], value: int) -> list[int]:
-    """Return all keys with matching value"""
+    """Return all keys matching value"""
     val_list: list[int] = list()
     for key, v in dic.items():
         if v == value:

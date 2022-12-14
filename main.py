@@ -128,18 +128,18 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
     default=None,
 )
 async def ajouter(
-        ctx: ApplicationContext,
-        membre1: Member,
-        salon1: GuildChannel,
-        voir: bool,
-        membre2: Member,
-        membre3: Member,
-        membre4: Member,
-        membre5: Member,
-        salon2: GuildChannel,
-        salon3: GuildChannel,
-        salon4: GuildChannel,
-        salon5: GuildChannel,
+    ctx: ApplicationContext,
+    membre1: Member,
+    salon1: GuildChannel,
+    voir: bool,
+    membre2: Member,
+    membre3: Member,
+    membre4: Member,
+    membre5: Member,
+    salon2: GuildChannel,
+    salon3: GuildChannel,
+    salon4: GuildChannel,
+    salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -210,17 +210,17 @@ async def ajouter(
     default=None,
 )
 async def supprimer(
-        ctx: ApplicationContext,
-        membre1: Member,
-        salon1: GuildChannel,
-        membre2: Member,
-        membre3: Member,
-        membre4: Member,
-        membre5: Member,
-        salon2: GuildChannel,
-        salon3: GuildChannel,
-        salon4: GuildChannel,
-        salon5: GuildChannel,
+    ctx: ApplicationContext,
+    membre1: Member,
+    salon1: GuildChannel,
+    membre2: Member,
+    membre3: Member,
+    membre4: Member,
+    membre5: Member,
+    salon2: GuildChannel,
+    salon3: GuildChannel,
+    salon4: GuildChannel,
+    salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -256,7 +256,8 @@ async def resume(ctx: ApplicationContext):
         embed=helper.create_embed(
             "Déplacement de salon ✅",
             f"Allez dans le salon suivant : {resume_channel.mention} !",
-        )
+        ),
+        ephemeral=True,
     )
 
     # create message
@@ -293,9 +294,11 @@ async def resume(ctx: ApplicationContext):
     description="Compte aussi les règles dont seul le nom est visible (défaut: Vrai)",
     default=True,
 )
-@discord.option(name="votres",
-                description="Comptez aussi les règles qui vous appartiennent (défaut: Faux)",
-                default=False)
+@discord.option(
+    name="votres",
+    description="Comptez aussi les règles qui vous appartiennent (défaut: Faux)",
+    default=False,
+)
 async def classement(ctx: ApplicationContext, cache: bool, votres: bool):
     rules_count = helper.count_known_rules_for_member(ctx.guild, cache, votres)
     # create message
@@ -320,15 +323,16 @@ async def classement(ctx: ApplicationContext, cache: bool, votres: bool):
     await ctx.respond(embed=embed)
 
 
-@bot.slash_command(name="aide",
-                   descrition="obtenez toutes les commandes disponibles")
+@bot.slash_command(
+    name="aide",
+    description="Obtenez toutes les commandes disponibles",
+)
 async def aide(ctx: ApplicationContext):
-    msg = "Voici toutes les commandes dont vous disposez : \n"
-    for command in bot.all_commands:
-        msg = f"{msg}{command.name}: {command.description}"
+    message = "Voici toutes les commandes :\n"
+    for command in bot.walk_application_commands():
+        message += f"**{command.name}**: {command.description}\n"
 
-    await ctx.respond(msg)
-
+    await ctx.respond(embed=helper.create_embed("Aide 📚", message))
 
 
 load_dotenv()
