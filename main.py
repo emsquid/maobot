@@ -20,9 +20,9 @@ async def on_ready():
 @bot.slash_command(name="atouts",
                    description="Génère aléatoirement une règles intégrant les atouts")
 async def atouts(ctx: ApplicationContext):
-    atouts_c: list[int] = [1040270798604226570, 1040265350274621590]
+    atouts_id: list[int] = [1040270798604226570, 1040265350274621590]
     embed = Embed()
-    embed.add_field(name=f"La règle choisie est la règle {bot.get_channel(atouts.pop(random.randrange(len(atouts_c)))).name.replace('règle-', '')}", value="")
+    embed.add_field(name=f"La règle choisie est la règle {bot.get_channel(atouts_id.pop(random.randrange(len(atouts_id)))).name.replace('règle-', '')}", value="")
 
     await ctx.respond(embed=embed)
 
