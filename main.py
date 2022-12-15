@@ -17,6 +17,16 @@ async def on_ready():
     print(f"{bot.user} is ready and online!")
 
 
+@bot.slash_command(name="atouts",
+                   description="Génère aléatoirement une règles intégrant les atouts")
+async def atouts(ctx: ApplicationContext):
+    atouts_c: list[int] = [1040270798604226570, 1040265350274621590]
+    embed = Embed()
+    embed.add_field(name=f"La règle choisie est la règle {bot.get_channel(atouts.pop(random.randrange(len(atouts_c)))).name.replace('règle-', '')}", value="")
+
+    await ctx.respond(embed=embed)
+
+
 @bot.slash_command(
     name="règle",
     description="Choisi une règle au hasard parmi toutes celles existantes",
@@ -128,18 +138,18 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
     default=None,
 )
 async def ajouter(
-    ctx: ApplicationContext,
-    membre1: Member,
-    salon1: GuildChannel,
-    voir: bool,
-    membre2: Member,
-    membre3: Member,
-    membre4: Member,
-    membre5: Member,
-    salon2: GuildChannel,
-    salon3: GuildChannel,
-    salon4: GuildChannel,
-    salon5: GuildChannel,
+        ctx: ApplicationContext,
+        membre1: Member,
+        salon1: GuildChannel,
+        voir: bool,
+        membre2: Member,
+        membre3: Member,
+        membre4: Member,
+        membre5: Member,
+        salon2: GuildChannel,
+        salon3: GuildChannel,
+        salon4: GuildChannel,
+        salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -166,7 +176,7 @@ async def ajouter(
 )
 @discord.option(
     "salon1",
-    description="Sélectionne un salons auquel les membres n'auront plus accès",
+    description="Sélectionne un salon auquel les membres n'auront plus accès",
     required=True,
 )
 @discord.option(
@@ -191,36 +201,36 @@ async def ajouter(
 )
 @discord.option(
     "salon2",
-    description="Sélectionne un salons auquel les membres n'auront plus accès",
+    description="Sélectionne un salon auquel les membres n'auront plus accès",
     default=None,
 )
 @discord.option(
     "salon3",
-    description="Sélectionne un salons auquel les membres n'auront plus accès",
+    description="Sélectionne un salon auquel les membres n'auront plus accès",
     default=None,
 )
 @discord.option(
     "salon4",
-    description="Sélectionne un salons auquel les membres n'auront plus accès",
+    description="Sélectionne un salon auquel les membres n'auront plus accès",
     default=None,
 )
 @discord.option(
     "salon5",
-    description="Sélectionne un salons auquel les membres n'auront plus accès",
+    description="Sélectionne un salon auquel les membres n'auront plus accès",
     default=None,
 )
 async def supprimer(
-    ctx: ApplicationContext,
-    membre1: Member,
-    salon1: GuildChannel,
-    membre2: Member,
-    membre3: Member,
-    membre4: Member,
-    membre5: Member,
-    salon2: GuildChannel,
-    salon3: GuildChannel,
-    salon4: GuildChannel,
-    salon5: GuildChannel,
+        ctx: ApplicationContext,
+        membre1: Member,
+        salon1: GuildChannel,
+        membre2: Member,
+        membre3: Member,
+        membre4: Member,
+        membre5: Member,
+        salon2: GuildChannel,
+        salon3: GuildChannel,
+        salon4: GuildChannel,
+        salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
