@@ -17,12 +17,16 @@ async def on_ready():
     print(f"{bot.user} is ready and online!")
 
 
-@bot.slash_command(name="atouts",
-                   description="Génère aléatoirement une règles intégrant les atouts")
+@bot.slash_command(
+    name="atouts", description="Génère aléatoirement une règles intégrant les atouts"
+)
 async def atouts(ctx: ApplicationContext):
     atouts_id: list[int] = [1040270798604226570, 1040265350274621590]
     embed = Embed()
-    embed.add_field(name=f"La règle choisie est la règle {bot.get_channel(atouts_id.pop(random.randrange(len(atouts_id)))).name.replace('règle-', '')}", value="")
+    embed.add_field(
+        name=f"La règle choisie est la règle {bot.get_channel(atouts_id.pop(random.randrange(len(atouts_id)))).name.replace('règle-', '')}",
+        value="",
+    )
 
     await ctx.respond(embed=embed)
 
@@ -138,18 +142,18 @@ async def regle(ctx: ApplicationContext, inconnues: bool):
     default=None,
 )
 async def ajouter(
-        ctx: ApplicationContext,
-        membre1: Member,
-        salon1: GuildChannel,
-        voir: bool,
-        membre2: Member,
-        membre3: Member,
-        membre4: Member,
-        membre5: Member,
-        salon2: GuildChannel,
-        salon3: GuildChannel,
-        salon4: GuildChannel,
-        salon5: GuildChannel,
+    ctx: ApplicationContext,
+    membre1: Member,
+    salon1: GuildChannel,
+    voir: bool,
+    membre2: Member,
+    membre3: Member,
+    membre4: Member,
+    membre5: Member,
+    salon2: GuildChannel,
+    salon3: GuildChannel,
+    salon4: GuildChannel,
+    salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -220,17 +224,17 @@ async def ajouter(
     default=None,
 )
 async def supprimer(
-        ctx: ApplicationContext,
-        membre1: Member,
-        salon1: GuildChannel,
-        membre2: Member,
-        membre3: Member,
-        membre4: Member,
-        membre5: Member,
-        salon2: GuildChannel,
-        salon3: GuildChannel,
-        salon4: GuildChannel,
-        salon5: GuildChannel,
+    ctx: ApplicationContext,
+    membre1: Member,
+    salon1: GuildChannel,
+    membre2: Member,
+    membre3: Member,
+    membre4: Member,
+    membre5: Member,
+    salon2: GuildChannel,
+    salon3: GuildChannel,
+    salon4: GuildChannel,
+    salon5: GuildChannel,
 ):
     members = list(filter(None, [membre1, membre2, membre3, membre4, membre5]))
     channels = list(filter(None, [salon1, salon2, salon3, salon4, salon5]))
@@ -271,7 +275,8 @@ async def resume(ctx: ApplicationContext):
     )
 
     # create message
-    message = ""
+    messages = [""]
+    current_message = 0
     nb_rules = 0
 
     for category in author_categories:
@@ -282,18 +287,26 @@ async def resume(ctx: ApplicationContext):
                     for member in channel.members
                     if not channel.permissions_for(member).administrator
                 )
+                message = f"{channel.mention}:\n{member_names}\n"
 
-                message += f"{channel.mention}:\n{member_names}\n"
+                if len(messages[current_message] + message) > 1024:
+                    messages.append(message)
+                    current_message += 1
+                else:
+                    messages[current_message] += message
+
                 nb_rules += 1
 
-    # send message
-    embed = helper.create_embed(
-        f"Règles de {ctx.author.display_name} ({nb_rules}) 📏",
-        message,
-    )
-
     await resume_channel.purge()
-    await resume_channel.send(embed=embed)
+
+    # send embeds
+    for message in messages:
+        embed = helper.create_embed(
+            f"Règles de {ctx.author.display_name} ({nb_rules}) 📏",
+            message,
+        )
+
+        await resume_channel.send(embed=embed)
 
 
 @bot.slash_command(
