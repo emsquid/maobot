@@ -32,7 +32,7 @@ async def atouts(ctx: ApplicationContext):
     description="Choisi une règle au hasard parmi toutes celles existantes",
 )
 @discord.option(
-    "inconnues",
+    name="inconnues",
     description="Cherche aussi parmi les règles que vous ne connaissez pas (défaut: Faux)",
     default=False,
 )
@@ -252,15 +252,15 @@ async def supprimer(
     description="Affichage de toutes les personnes pouvant voir vos règles",
 )
 async def resume(ctx: ApplicationContext):
-    author_category = helper.get_category(ctx.author, ctx.guild)
+    author_categories = helper.get_categories(ctx.author, ctx.guild)
 
     # prevent someone with no categories from trying
-    if author_category is None:
+    if len(author_categories) == 0:
         error_embed = helper.create_embed("Erreur ⛔️", "Vous n'avez aucune catégorie")
 
         return await ctx.respond(embed=error_embed, ephemeral=True)
 
-    resume_channel = await helper.get_resume_channel(author_category)
+    resume_channel = await helper.get_resume_channel(author_categories[0])
 
     await ctx.respond(
         embed=helper.create_embed(
@@ -274,16 +274,17 @@ async def resume(ctx: ApplicationContext):
     message = ""
     nb_rules = 0
 
-    for channel in author_category.channels:
-        if channel.name.startswith("règle-") and channel.name != "règle-de":
-            member_names = ", ".join(
-                member.display_name
-                for member in channel.members
-                if not channel.permissions_for(member).administrator
-            )
+    for category in author_categories:
+        for channel in category.channels:
+            if channel.name.startswith("règle-") and channel.name != "règle-de":
+                member_names = ", ".join(
+                    member.display_name
+                    for member in channel.members
+                    if not channel.permissions_for(member).administrator
+                )
 
-            message += f"{channel.mention}:\n{member_names}\n"
-            nb_rules += 1
+                message += f"{channel.mention}:\n{member_names}\n"
+                nb_rules += 1
 
     # send message
     embed = helper.create_embed(
